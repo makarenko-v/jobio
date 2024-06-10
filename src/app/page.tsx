@@ -9,7 +9,8 @@ export default function Page() {
         Jobio
       </h1>
       <p className="text-3xl">
-        Job tracking app for <span className="font-bold">job hunters</span>
+        Job tracking app for{' '}
+        <span className="text-primary font-bold">job hunters</span>
       </p>
       <Button className="p-6 text-xl" asChild>
         <Link href="/jobs/add">Get Started</Link>
