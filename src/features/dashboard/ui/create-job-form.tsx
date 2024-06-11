@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { Button } from '@/features/shared/ui/button';
 import { Form } from '@/features/shared/ui/form';
-import { CreateJobDto } from '@/features/dashboard/data-access';
+import { createJob, CreateJobDto } from '@/features/dashboard/data-access';
 import {
   createJobSchema,
   JobMode,
@@ -12,9 +12,23 @@ import {
 } from '@/features/dashboard/domain';
 import { Field } from '@/features/shared/ui/field';
 import { FormSelect } from '@/features/shared/ui/form-select';
+import { useMutation } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
+import { useToast } from '@/features/shared/ui/use-toast';
+import { useQueryClient } from '@tanstack/react-query';
+import { auth } from '@clerk/nextjs/server';
 
-export function CreateJobForm() {
-  // 1. Define your form.
+interface CreateJobFormProps {
+  userId: string;
+}
+
+export function CreateJobForm({ userId }: CreateJobFormProps) {
+  const queryClient = useQueryClient();
+
+  const { toast } = useToast();
+
+  const router = useRouter();
+
   const form = useForm<CreateJobDto>({
     resolver: zodResolver(createJobSchema),
     defaultValues: {
@@ -26,11 +40,34 @@ export function CreateJobForm() {
     },
   });
 
-  // 2. Define a submit handler.
+  const { mutate, isPending } = useMutation({
+    mutationFn: (values: CreateJobDto) => createJob(userId, values),
+    onSuccess: (data) => {
+      if (!data) {
+        toast({
+          description: 'There was an error',
+        });
+
+        return;
+      }
+
+      toast({
+        description: 'Job Created',
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      queryClient.invalidateQueries({ queryKey: ['stats'] });
+      queryClient.invalidateQueries({ queryKey: ['charts'] });
+
+      router.push('/');
+    },
+    onError: (err) => {
+      console.log(err);
+    },
+  });
+
   function onSubmit(values: CreateJobDto) {
-    // Do something with the form values.
-    // ✅ This will be type-safe and validated.
-    console.log(values);
+    mutate(values);
   }
 
   return (
@@ -55,7 +92,7 @@ export function CreateJobForm() {
             items={Object.values(JobMode)}
           />
           <Button className="self-end" type="submit">
-            Create Job
+            {isPending ? 'Loading...' : 'Create Job'}
           </Button>
         </div>
       </form>
