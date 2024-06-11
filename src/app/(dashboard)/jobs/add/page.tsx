@@ -1,3 +1,5 @@
+import { CreateJobForm } from '@/features/dashboard/ui/create-job-form';
+
 export default function Page() {
-  return <div>Add Job</div>;
+  return <CreateJobForm />;
 }
