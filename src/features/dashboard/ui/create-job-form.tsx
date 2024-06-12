@@ -59,7 +59,7 @@ export function CreateJobForm({ userId }: CreateJobFormProps) {
       queryClient.invalidateQueries({ queryKey: ['stats'] });
       queryClient.invalidateQueries({ queryKey: ['charts'] });
 
-      router.push('/');
+      router.push('/jobs');
     },
     onError: (err) => {
       console.log(err);
