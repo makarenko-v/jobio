@@ -1,4 +1,4 @@
-import { CreateJobForm } from '@/features/dashboard/ui/create-job-form';
+import { CreateJobForm } from '@/features/dashboard/ui';
 import {
   HydrationBoundary,
   QueryClient,
