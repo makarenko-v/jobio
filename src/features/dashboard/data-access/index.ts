@@ -10,7 +10,7 @@ import { db } from '@/features/shared/data-access';
 import { jobs } from '@/features/shared/data-access/schema';
 import { currentUser } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
-import { and, desc, eq, ilike, or } from 'drizzle-orm';
+import { and, desc, eq, ilike, or, SQL } from 'drizzle-orm';
 
 export type CreateJobDto = z.infer<typeof createJobSchema>;
 export type EditJobDto = z.infer<typeof editJobSchema>;
@@ -60,6 +60,8 @@ export async function getAllJobs({
     redirect('/sign-in');
   }
 
+  console.log(search);
+
   try {
     const foundJobs = (await db
       .select()
@@ -68,7 +70,10 @@ export async function getAllJobs({
         and(
           eq(jobs.clerkId, user.id),
           search
-            ? or(ilike(jobs.position, search), ilike(jobs.company, search))
+            ? or(
+                ilike(jobs.position, `%${search}%`),
+                ilike(jobs.company, `%${search}%`),
+              )
             : undefined,
           jobStatus && jobStatus !== 'all'
             ? eq(jobs.status, jobStatus)
@@ -78,7 +83,30 @@ export async function getAllJobs({
       .orderBy(desc(jobs.createdAt))) as Job[];
 
     return { jobs: foundJobs, count: 0, page: 1, totalPages: 0 };
-  } catch (_) {
+  } catch (e) {
+    console.log(e);
+
     return { jobs: [], count: 0, page: 1, totalPages: 0 };
+  }
+}
+
+export async function deleteJob(id: string): Promise<Job | null> {
+  const user = await currentUser();
+
+  if (!user) {
+    redirect('/sign-in');
+  }
+
+  try {
+    const [job] = (await db
+      .delete(jobs)
+      .where(and(eq(jobs.id, id), eq(jobs.clerkId, user.id)))
+      .returning()) as Job[];
+
+    return job;
+  } catch (e) {
+    console.log(e);
+
+    return null;
   }
 }
