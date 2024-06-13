@@ -57,6 +57,8 @@ export function EditJobForm({ jobId }: EditJobFormProps) {
         return;
       }
 
+      toast({ description: `Job '${data.position}' was updated` });
+
       queryClient.invalidateQueries({ queryKey: ['jobs'] });
       queryClient.invalidateQueries({ queryKey: ['job', jobId] });
       queryClient.invalidateQueries({ queryKey: ['stats'] });

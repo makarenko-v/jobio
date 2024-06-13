@@ -10,7 +10,7 @@ import { db } from '@/features/shared/data-access';
 import { jobs } from '@/features/shared/data-access/schema';
 import { currentUser } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
-import { and, desc, eq, ilike, or, SQL } from 'drizzle-orm';
+import { and, count, desc, eq, ilike, or, SQL } from 'drizzle-orm';
 
 export type CreateJobDto = z.infer<typeof createJobSchema>;
 export type EditJobDto = z.infer<typeof editJobSchema>;
@@ -165,4 +165,25 @@ export async function updateJob(
 
     return null;
   }
+}
+
+interface Stat {
+  status: string;
+  count: number;
+}
+
+export async function getStats() {
+  const user = await currentUser();
+
+  if (!user) {
+    redirect('/sign-in');
+  }
+
+  const stats = (await db
+    .select({ status: jobs.status, count: count() })
+    .from(jobs)
+    .where(eq(jobs.clerkId, user.id))
+    .groupBy(jobs.status)) as Stat[];
+
+  return stats;
 }
