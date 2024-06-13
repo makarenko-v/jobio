@@ -110,3 +110,59 @@ export async function deleteJob(id: string): Promise<Job | null> {
     return null;
   }
 }
+
+export async function getJob(id: string): Promise<Job | null> {
+  const user = await currentUser();
+
+  if (!user) {
+    redirect('/sign-in');
+  }
+
+  let job: Job | null;
+
+  try {
+    const [foundJob] = (await db
+      .select()
+      .from(jobs)
+      .where(and(eq(jobs.id, id), eq(jobs.clerkId, user.id)))) as [
+      Job | undefined,
+    ];
+
+    if (foundJob === undefined) {
+      job = null;
+    } else {
+      job = foundJob;
+    }
+  } catch (e) {
+    console.log(e);
+
+    job = null;
+  }
+
+  if (!job) {
+    redirect('/jobs');
+  }
+
+  return job;
+}
+
+export async function updateJob(
+  id: string,
+  values: EditJobDto,
+): Promise<Job | null> {
+  try {
+    const [job] = (await db
+      .update(jobs)
+      .set({
+        ...values,
+      })
+      .where(eq(jobs.id, id))
+      .returning()) as Job[];
+
+    return job;
+  } catch (e) {
+    console.log(e);
+
+    return null;
+  }
+}

@@ -13,6 +13,7 @@ import { Badge } from '@/features/shared/ui/badge';
 import { JobInfo } from '@/features/dashboard/ui/job-info';
 import { Button } from '@/features/shared/ui/button';
 import { DeleteButton } from '@/features/dashboard/ui/delete-button';
+import Link from 'next/link';
 
 interface JobCardProps {
   job: Job;
@@ -43,7 +44,9 @@ export function JobCard({ job }: JobCardProps) {
         </div>
       </CardContent>
       <CardFooter className="flex gap-4">
-        <Button>Edit</Button>
+        <Button asChild>
+          <Link href={`/jobs/${job.id}`}>Edit</Link>
+        </Button>
         <DeleteButton id={job.id} />
       </CardFooter>
     </Card>

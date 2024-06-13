@@ -4,43 +4,50 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { Button } from '@/features/shared/ui/button';
 import { Form } from '@/features/shared/ui/form';
-import { createJob, CreateJobDto } from '@/features/dashboard/data-access';
 import {
-  createJobSchema,
+  EditJobDto,
+  getJob,
+  updateJob,
+} from '@/features/dashboard/data-access';
+import {
+  editJobSchema,
   JobMode,
+  JobModeType,
   JobStatus,
+  JobStatusType,
 } from '@/features/dashboard/domain';
 import { Field } from '@/features/shared/ui/field';
 import { FormSelect } from '@/features/shared/ui/form-select';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/features/shared/ui/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 
-interface CreateJobFormProps {
-  userId: string;
+interface EditJobFormProps {
+  jobId: string;
 }
 
-export function CreateJobForm({ userId }: CreateJobFormProps) {
+export function EditJobForm({ jobId }: EditJobFormProps) {
   const queryClient = useQueryClient();
 
-  const { toast } = useToast();
+  const { data } = useQuery({
+    queryKey: ['job', jobId],
+    queryFn: () => getJob(jobId),
+  });
 
-  const router = useRouter();
-
-  const form = useForm<CreateJobDto>({
-    resolver: zodResolver(createJobSchema),
+  const form = useForm<EditJobDto>({
+    resolver: zodResolver(editJobSchema),
     defaultValues: {
-      position: '',
-      company: '',
-      location: '',
-      status: JobStatus.PENDING,
-      mode: JobMode.FULL_TIME,
+      position: data?.position ?? '',
+      company: data?.company ?? '',
+      location: data?.location ?? '',
+      status: (data?.status as JobStatusType) ?? JobStatus.PENDING,
+      mode: (data?.mode as JobModeType) ?? JobMode.FULL_TIME,
     },
   });
 
   const { mutate, isPending } = useMutation({
-    mutationFn: (values: CreateJobDto) => createJob(userId, values),
+    mutationFn: (values: EditJobDto) => updateJob(jobId, values),
     onSuccess: (data) => {
       if (!data) {
         toast({
@@ -50,22 +57,19 @@ export function CreateJobForm({ userId }: CreateJobFormProps) {
         return;
       }
 
-      toast({
-        description: 'Job Created',
-      });
-
       queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      queryClient.invalidateQueries({ queryKey: ['job', jobId] });
       queryClient.invalidateQueries({ queryKey: ['stats'] });
-      queryClient.invalidateQueries({ queryKey: ['charts'] });
 
       router.push('/jobs');
     },
-    onError: (err) => {
-      console.log(err);
-    },
   });
 
-  function onSubmit(values: CreateJobDto) {
+  const { toast } = useToast();
+
+  const router = useRouter();
+
+  function onSubmit(values: EditJobDto) {
     mutate(values);
   }
 
@@ -75,7 +79,7 @@ export function CreateJobForm({ userId }: CreateJobFormProps) {
         onSubmit={form.handleSubmit(onSubmit)}
         className="rounded bg-muted p-8"
       >
-        <h2 className="mb-6 text-4xl font-semibold">Add job</h2>
+        <h2 className="mb-6 text-4xl font-semibold">Edit job</h2>
         <div className="grid items-start gap-4 md:grid-cols-2 lg:grid-cols-3">
           <Field name="position" control={form.control} />
           <Field name="company" control={form.control} />
@@ -91,7 +95,7 @@ export function CreateJobForm({ userId }: CreateJobFormProps) {
             items={Object.values(JobMode)}
           />
           <Button className="self-end" type="submit">
-            {isPending ? 'Loading...' : 'Create Job'}
+            {isPending ? 'Loading...' : 'Edit Job'}
           </Button>
         </div>
       </form>
