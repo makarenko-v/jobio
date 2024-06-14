@@ -10,7 +10,8 @@ import { db } from '@/features/shared/data-access';
 import { jobs } from '@/features/shared/data-access/schema';
 import { currentUser } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
-import { and, count, desc, eq, ilike, or, SQL } from 'drizzle-orm';
+import { and, asc, count, desc, eq, gte, ilike, or, SQL } from 'drizzle-orm';
+import dayjs from 'dayjs';
 
 export type CreateJobDto = z.infer<typeof createJobSchema>;
 export type EditJobDto = z.infer<typeof editJobSchema>;
@@ -48,6 +49,8 @@ interface GetAllJobsParams {
 export async function getAllJobs({
   search,
   jobStatus,
+  page = 1,
+  limit = 10,
 }: GetAllJobsParams): Promise<{
   jobs: Job[];
   count: number;
@@ -60,29 +63,49 @@ export async function getAllJobs({
     redirect('/sign-in');
   }
 
-  console.log(search);
+  const filters: (SQL<unknown> | undefined)[] = [eq(jobs.clerkId, user.id)];
+
+  if (search) {
+    filters.push(
+      or(
+        ilike(jobs.position, `%${search}%`),
+        ilike(jobs.company, `%${search}%`),
+      ),
+    );
+  }
+
+  if (jobStatus && jobStatus !== 'all') {
+    filters.push(eq(jobs.status, jobStatus));
+  }
+
+  const offset = (page - 1) * limit;
 
   try {
     const foundJobs = (await db
       .select()
       .from(jobs)
-      .where(
-        and(
-          eq(jobs.clerkId, user.id),
-          search
-            ? or(
-                ilike(jobs.position, `%${search}%`),
-                ilike(jobs.company, `%${search}%`),
-              )
-            : undefined,
-          jobStatus && jobStatus !== 'all'
-            ? eq(jobs.status, jobStatus)
-            : undefined,
-        ),
-      )
-      .orderBy(desc(jobs.createdAt))) as Job[];
+      .where(and(...filters))
+      .orderBy(desc(jobs.createdAt))
+      .offset(offset)
+      .limit(limit)) as Job[];
 
-    return { jobs: foundJobs, count: 0, page: 1, totalPages: 0 };
+    const [totalJobs] = await db
+      .select({ count: count() })
+      .from(jobs)
+      .where(and(...filters));
+
+    console.log('total jobs', totalJobs);
+
+    const jobsCount = totalJobs.count;
+
+    const totalPages = Math.ceil(jobsCount / limit);
+
+    return {
+      jobs: foundJobs,
+      count: jobsCount,
+      page,
+      totalPages,
+    };
   } catch (e) {
     console.log(e);
 
@@ -179,11 +202,39 @@ export async function getStats() {
     redirect('/sign-in');
   }
 
-  const stats = (await db
+  return (await db
     .select({ status: jobs.status, count: count() })
     .from(jobs)
     .where(eq(jobs.clerkId, user.id))
     .groupBy(jobs.status)) as Stat[];
+}
 
-  return stats;
+export async function getChartData() {
+  const user = await currentUser();
+
+  if (!user) {
+    redirect('/sign-in');
+  }
+
+  const sixMonthsAgo = dayjs().subtract(6, 'month').toDate();
+
+  const foundJobs = await db
+    .select()
+    .from(jobs)
+    .where(and(eq(jobs.clerkId, user.id), gte(jobs.createdAt, sixMonthsAgo)))
+    .orderBy(asc(jobs.createdAt));
+
+  const data = foundJobs.reduce(
+    (acc, job) => {
+      const date = dayjs(job.createdAt).format('MMM YY');
+
+      return { ...acc, [date]: (acc[date] ?? 0) + 1 };
+    },
+    {} as Record<string, number>,
+  );
+
+  return Object.entries(data).map(([key, value]) => ({
+    date: key,
+    count: value,
+  }));
 }

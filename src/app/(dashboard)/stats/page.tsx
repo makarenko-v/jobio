@@ -1,10 +1,10 @@
-import { getStats } from '@/features/dashboard/data-access';
+import { getChartData, getStats } from '@/features/dashboard/data-access';
 import {
   dehydrate,
   HydrationBoundary,
   QueryClient,
 } from '@tanstack/react-query';
-import { Stats } from '@/features/dashboard/ui';
+import { Chart, Stats } from '@/features/dashboard/ui';
 
 export default async function Page() {
   const queryClient = new QueryClient();
@@ -14,9 +14,15 @@ export default async function Page() {
     queryFn: () => getStats(),
   });
 
+  await queryClient.prefetchQuery({
+    queryKey: ['charts'],
+    queryFn: () => getChartData(),
+  });
+
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
       <Stats />
+      <Chart />
     </HydrationBoundary>
   );
 }
