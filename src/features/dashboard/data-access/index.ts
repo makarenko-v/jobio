@@ -16,10 +16,19 @@ import dayjs from 'dayjs';
 export type CreateJobDto = z.infer<typeof createJobSchema>;
 export type EditJobDto = z.infer<typeof editJobSchema>;
 
-export async function createJob(
-  userId: string,
-  values: CreateJobDto,
-): Promise<Job | null> {
+async function getCurrentUser() {
+  const user = await currentUser();
+
+  if (!user) {
+    redirect('/sign-in');
+  }
+
+  return user;
+}
+
+export async function createJob(values: CreateJobDto): Promise<Job | null> {
+  const user = await getCurrentUser();
+
   try {
     createJobSchema.safeParse(values);
 
@@ -27,7 +36,7 @@ export async function createJob(
       .insert(jobs)
       .values({
         ...values,
-        clerkId: userId,
+        clerkId: user.id,
       })
       .returning()) as Job[];
 
@@ -57,11 +66,7 @@ export async function getAllJobs({
   page: number;
   totalPages: number;
 }> {
-  const user = await currentUser();
-
-  if (!user) {
-    redirect('/sign-in');
-  }
+  const user = await getCurrentUser();
 
   const filters: (SQL<unknown> | undefined)[] = [eq(jobs.clerkId, user.id)];
 
@@ -114,11 +119,7 @@ export async function getAllJobs({
 }
 
 export async function deleteJob(id: string): Promise<Job | null> {
-  const user = await currentUser();
-
-  if (!user) {
-    redirect('/sign-in');
-  }
+  const user = await getCurrentUser();
 
   try {
     const [job] = (await db
@@ -135,11 +136,7 @@ export async function deleteJob(id: string): Promise<Job | null> {
 }
 
 export async function getJob(id: string): Promise<Job | null> {
-  const user = await currentUser();
-
-  if (!user) {
-    redirect('/sign-in');
-  }
+  const user = await getCurrentUser();
 
   let job: Job | null;
 
@@ -196,11 +193,7 @@ interface Stat {
 }
 
 export async function getStats() {
-  const user = await currentUser();
-
-  if (!user) {
-    redirect('/sign-in');
-  }
+  const user = await getCurrentUser();
 
   return (await db
     .select({ status: jobs.status, count: count() })

@@ -17,11 +17,7 @@ import { useRouter } from 'next/navigation';
 import { useToast } from '@/features/shared/ui/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 
-interface CreateJobFormProps {
-  userId: string;
-}
-
-export function CreateJobForm({ userId }: CreateJobFormProps) {
+export function CreateJobForm() {
   const queryClient = useQueryClient();
 
   const { toast } = useToast();
@@ -40,7 +36,7 @@ export function CreateJobForm({ userId }: CreateJobFormProps) {
   });
 
   const { mutate, isPending } = useMutation({
-    mutationFn: (values: CreateJobDto) => createJob(userId, values),
+    mutationFn: (values: CreateJobDto) => createJob(values),
     onSuccess: (data) => {
       if (!data) {
         toast({
