@@ -5,6 +5,7 @@ import { getAllJobs } from '@/features/dashboard/data-access';
 import { useSearchParams } from 'next/navigation';
 import { JobCard } from '@/features/dashboard/ui/job-card';
 import { Pagination } from '@/features/shared/ui/pagination';
+import { Skeleton } from '@/features/shared/ui/skeleton';
 
 export function JobList() {
   const searchParams = useSearchParams();
@@ -19,7 +20,7 @@ export function JobList() {
   });
 
   if (isPending) {
-    return <div>Loading...</div>;
+    return <JobListLoading />;
   }
 
   const jobs = data?.jobs ?? [];
@@ -40,6 +41,22 @@ export function JobList() {
       <div className="grid gap-8 md:grid-cols-2">
         {jobs.map((job) => (
           <JobCard key={job.id} job={job} />
+        ))}
+      </div>
+    </>
+  );
+}
+
+export function JobListLoading() {
+  return (
+    <>
+      <div className="mb-4 mt-4 flex items-center justify-between">
+        <Skeleton className="hidden h-12 w-14 md:block md:h-8 md:w-40" />
+        <Skeleton className="h-16 w-full md:h-10 md:w-96" />
+      </div>
+      <div className="grid gap-8 md:grid-cols-2">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <Skeleton key={i} className="h-64 w-full" />
         ))}
       </div>
     </>

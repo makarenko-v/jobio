@@ -11,6 +11,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import { Skeleton } from '@/features/shared/ui/skeleton';
 
 export function Chart() {
   const { data } = useQuery({
@@ -29,4 +30,8 @@ export function Chart() {
       </BarChart>
     </ResponsiveContainer>
   );
+}
+
+export function ChartLoading() {
+  return <Skeleton className="h-60 w-full" />;
 }

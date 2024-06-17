@@ -12,6 +12,7 @@ import { JobStatus } from '@/features/dashboard/domain';
 import { Button } from '@/features/shared/ui/button';
 import React from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { Skeleton } from '@/features/shared/ui/skeleton';
 
 export function SearchForm() {
   const router = useRouter();
@@ -57,5 +58,15 @@ export function SearchForm() {
       </Select>
       <Button type="submit">Search</Button>
     </form>
+  );
+}
+
+export function SearchFormLoading() {
+  return (
+    <div className="mb-16 grid gap-4 rounded-lg p-8 sm:grid-cols-2 md:grid-cols-3">
+      <Skeleton className="h-10 w-full" />
+      <Skeleton className="h-10 w-full" />
+      <Skeleton className="h-10 w-full" />
+    </div>
   );
 }

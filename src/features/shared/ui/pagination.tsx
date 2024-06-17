@@ -13,8 +13,6 @@ export function Pagination({ currentPage, totalPages }: PaginationProps) {
   const router = useRouter();
   const pathname = usePathname();
 
-  const pages = Array.from({ length: totalPages }).map((_, i) => i + 1);
-
   function handlePagination(page: number) {
     const defaultParams = {
       search: searchParams.get('search') ?? '',

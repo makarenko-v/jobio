@@ -8,6 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/features/shared/ui/card';
+import { Skeleton } from '@/features/shared/ui/skeleton';
 
 export function Stats() {
   const { data } = useQuery({
@@ -26,6 +27,16 @@ export function Stats() {
             </CardDescription>
           </CardHeader>
         </Card>
+      ))}
+    </div>
+  );
+}
+
+export function StatsLoading() {
+  return (
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      {Array.from({ length: 3 }).map((_, i) => (
+        <Skeleton className="h-24 w-full" key={i} />
       ))}
     </div>
   );
