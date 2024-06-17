@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { JobCard } from '@/features/dashboard/ui/job-card';
 import { Pagination } from '@/features/shared/ui/pagination';
 import { Skeleton } from '@/features/shared/ui/skeleton';
+import Link from 'next/link';
 
 export function JobList() {
   const searchParams = useSearchParams();
@@ -26,7 +27,14 @@ export function JobList() {
   const jobs = data?.jobs ?? [];
 
   if (jobs.length === 0) {
-    return <div>No jobs found...</div>;
+    return (
+      <div className="text-center text-xl font-bold">
+        No jobs found...{' '}
+        <Link className="underline underline-offset-4" href="/jobs/add">
+          Create one?
+        </Link>
+      </div>
+    );
   }
 
   const count = data?.count ?? 0;

@@ -5,6 +5,7 @@ import {
   createJobSchema,
   editJobSchema,
   Job,
+  JobStatusType,
 } from '@/features/dashboard/domain';
 import { db } from '@/features/shared/data-access';
 import { jobs } from '@/features/shared/data-access/schema';
@@ -188,26 +189,31 @@ export async function updateJob(
 }
 
 interface Stat {
-  status: string;
+  status: JobStatusType;
   count: number;
 }
 
 export async function getStats() {
   const user = await getCurrentUser();
-
-  return (await db
+  const data = (await db
     .select({ status: jobs.status, count: count() })
     .from(jobs)
     .where(eq(jobs.clerkId, user.id))
     .groupBy(jobs.status)) as Stat[];
+
+  console.log(data);
+
+  return data.length === 0
+    ? [
+        { count: 0, status: 'pending' },
+        { count: 0, status: 'declined' },
+        { count: 0, status: 'accepted' },
+      ]
+    : data;
 }
 
 export async function getChartData() {
-  const user = await currentUser();
-
-  if (!user) {
-    redirect('/sign-in');
-  }
+  const user = await getCurrentUser();
 
   const sixMonthsAgo = dayjs().subtract(6, 'month').toDate();
 

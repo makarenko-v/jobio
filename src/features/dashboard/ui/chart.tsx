@@ -12,12 +12,24 @@ import {
   YAxis,
 } from 'recharts';
 import { Skeleton } from '@/features/shared/ui/skeleton';
+import Link from 'next/link';
 
 export function Chart() {
   const { data } = useQuery({
-    queryKey: ['chart'],
+    queryKey: ['charts'],
     queryFn: () => getChartData(),
   });
+
+  if (data?.length === 0) {
+    return (
+      <div className="mt-10 text-center text-xl font-bold">
+        No data to visualize,{' '}
+        <Link className="underline underline-offset-4" href="/jobs/add">
+          create a job first.
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <ResponsiveContainer width="100%" height={300}>
